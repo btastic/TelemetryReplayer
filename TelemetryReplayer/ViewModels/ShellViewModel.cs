@@ -1,8 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -30,7 +30,9 @@ namespace TelemetryReplayer.ViewModels
         x1 = 1,
         x2 = 2,
         x4 = 4,
-        x8 = 8
+        x8 = 8,
+        x16 = 16,
+        x32 = 32
     }
 
     [Export(typeof(IShell))]
@@ -50,6 +52,10 @@ namespace TelemetryReplayer.ViewModels
                         return "x4";
                     case ReplaySpeed.x8:
                         return "x8";
+                    case ReplaySpeed.x16:
+                        return "x16";
+                    case ReplaySpeed.x32:
+                        return "x32";
                     default:
                         return "xx";
                 }
@@ -240,8 +246,8 @@ namespace TelemetryReplayer.ViewModels
             }
         }
 
-        private List<BinaryPacket> _replayData;
-        public List<BinaryPacket> ReplayData
+        private List<IGrouping<uint, BinaryPacket>> _replayData;
+        public List<IGrouping<uint, BinaryPacket>> ReplayData
         {
             get { return _replayData; }
             private set
@@ -296,50 +302,57 @@ namespace TelemetryReplayer.ViewModels
 
         public void OnDebugDataSelected(object sender, SelectionChangedEventArgs e)
         {
+            if (e.AddedItems.Count == 0)
+            {
+                return;
+            }
+
             var selectedDebugData = ((DebugModel)e.AddedItems[0]);
             switch (selectedDebugData.PacketType)
             {
                 case PacketType.Motion:
-                    var motionData = StructUtility.ConvertToPacket<PacketMotionData>(selectedDebugData.Data);
+                    PacketMotionData motionData = StructUtility.ConvertToPacket<PacketMotionData>(selectedDebugData.Data);
                     DebugDetails = JsonConvert.SerializeObject(motionData, Formatting.Indented);
                     return;
                 case PacketType.Session:
-                    var sessionData = StructUtility.ConvertToPacket<PacketSessionData>(selectedDebugData.Data);
+                    PacketSessionData sessionData = StructUtility.ConvertToPacket<PacketSessionData>(selectedDebugData.Data);
                     DebugDetails = JsonConvert.SerializeObject(sessionData, Formatting.Indented);
                     return;
                 case PacketType.LapData:
-                    var lapData = StructUtility.ConvertToPacket<PacketLapData>(selectedDebugData.Data);
+                    PacketLapData lapData = StructUtility.ConvertToPacket<PacketLapData>(selectedDebugData.Data);
                     DebugDetails = JsonConvert.SerializeObject(lapData, Formatting.Indented);
                     return;
                 case PacketType.Event:
-                    var eventData = StructUtility.ConvertToPacket<EventPacket>(selectedDebugData.Data);
+                    EventPacket eventData = StructUtility.ConvertToPacket<EventPacket>(selectedDebugData.Data);
                     DebugDetails = JsonConvert.SerializeObject(eventData, Formatting.Indented);
                     return;
                 case PacketType.Participants:
-                    var participantsData = StructUtility.ConvertToPacket<PacketParticipantsData>(selectedDebugData.Data);
+                    PacketParticipantsData participantsData = StructUtility.ConvertToPacket<PacketParticipantsData>(selectedDebugData.Data);
                     DebugDetails = JsonConvert.SerializeObject(participantsData, Formatting.Indented);
                     return;
                 case PacketType.CarSetups:
-                    var carSetupsData = StructUtility.ConvertToPacket<PacketCarSetupData>(selectedDebugData.Data);
+                    PacketCarSetupData carSetupsData = StructUtility.ConvertToPacket<PacketCarSetupData>(selectedDebugData.Data);
                     DebugDetails = JsonConvert.SerializeObject(carSetupsData, Formatting.Indented);
                     return;
                 case PacketType.CarTelemetry:
-                    var carTelemetryData = StructUtility.ConvertToPacket<PacketCarTelemetryData>(selectedDebugData.Data);
+                    PacketCarTelemetryData carTelemetryData = StructUtility.ConvertToPacket<PacketCarTelemetryData>(selectedDebugData.Data);
                     DebugDetails = JsonConvert.SerializeObject(carTelemetryData, Formatting.Indented);
                     return;
                 case PacketType.CarStatus:
-                    var carStatusData = StructUtility.ConvertToPacket<PacketCarStatusData>(selectedDebugData.Data);
+                    PacketCarStatusData carStatusData = StructUtility.ConvertToPacket<PacketCarStatusData>(selectedDebugData.Data);
                     DebugDetails = JsonConvert.SerializeObject(carStatusData, Formatting.Indented);
                     return;
             }
         }
 
-        private async Task<List<BinaryPacket>> LoadReplay(FileInfo file)
+        private async Task<List<IGrouping<uint, BinaryPacket>>> LoadReplay(FileInfo file)
         {
-            return await Task<List<BinaryPacket>>.Run(() =>
+            return await Task<List<IGrouping<uint, BinaryPacket>>>.Run(() =>
             {
                 var data = File.ReadAllBytes(file.FullName);
-                return LZ4MessagePackSerializer.Deserialize<List<BinaryPacket>>(data);
+                List<BinaryPacket> binaryPackets = LZ4MessagePackSerializer.Deserialize<List<BinaryPacket>>(data);
+                List<IGrouping<uint, BinaryPacket>> groups = binaryPackets.GroupBy(x => x.FrameIdentifier).ToList();
+                return groups;
             });
         }
 
@@ -357,7 +370,7 @@ namespace TelemetryReplayer.ViewModels
 
         public void ToggleReplaySpeed()
         {
-            if (ReplaySpeed == ReplaySpeed.x8)
+            if (ReplaySpeed == ReplaySpeed.x32)
             {
                 ReplaySpeed = ReplaySpeed.x1;
             }
@@ -379,10 +392,8 @@ namespace TelemetryReplayer.ViewModels
             _cancelTasks = new CancellationTokenSource();
             Status = Status.Playing;
 
-            await Task.Run(() =>
+            await Task.Run(async () =>
             {
-                var lastPackageTimeSpan = new TimeSpan();
-
                 var groupEP = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 20777);
                 using (var udpSocket = new UdpClient())
                 {
@@ -395,31 +406,22 @@ namespace TelemetryReplayer.ViewModels
                             break;
                         }
 
-                        BinaryPacket item = ReplayData[ReplayDataIndex];
+                        Thread.Sleep((60 / (int)ReplaySpeed));
 
-                        if (!lastPackageTimeSpan.Equals(default(TimeSpan)))
+                        foreach (BinaryPacket item in ReplayData[ReplayDataIndex])
                         {
-                            Thread.Sleep(1000 / (60 * (int)ReplaySpeed));
-                        }
+                            udpSocket.Send(item.Data, item.Data.Length, groupEP);
 
-                        udpSocket.Send(item.Data, item.Data.Length, groupEP);
-
-                        if (Debug)
-                        {
-                            Execute.OnUIThread(() =>
+                            if (Debug)
                             {
-                                DebugData.Insert(0, DebugModel.FromBinaryPacket(item));
-                            });
+                                await Execute.OnUIThreadAsync(() =>
+                                {
+                                    DebugData.Insert(0, DebugModel.FromBinaryPacket(item));
+                                });
+                            }
                         }
 
-                        if (ReplayDataIndex == ReplayData.Count - 1)
-                        {
-                            lastPackageTimeSpan = default(TimeSpan);
-                        }
-                        else
-                        {
-                            lastPackageTimeSpan = item.TimeSpan;
-                        }
+                        ReplayDataIndex += ReplayData[ReplayDataIndex].Count();
                     }
                 }
             }, _cancelTasks.Token);
