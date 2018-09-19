@@ -101,6 +101,8 @@
     <Compile Include="Utility\Extensions.cs" />
     <Compile Include="ValueConverters\GenericBoolConverter.cs" />
     <Compile Include="ViewModels\DebugModel.cs" />
+    <Compile Include="ViewModels\ObjectViewModel.cs" />
+    <Compile Include="ViewModels\ObjectViewModelHierarchy.cs" />
     <Compile Include="ViewModels\ShellViewModel.cs" />
     <Page Include="Resources\Icons.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -142,6 +144,7 @@
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <None Include="data\4206291896779928337.f1s">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

@@ -207,13 +207,13 @@ namespace TelemetryReplayer.ViewModels
                 if (!_debug)
                 {
                     DebugData.Clear();
-                    DebugDetails = string.Empty;
+                    DebugDetails = null;
                 }
             }
         }
 
-        private string _debugDetails;
-        public string DebugDetails
+        private ObjectViewModelHierarchy _debugDetails;
+        public ObjectViewModelHierarchy DebugDetails
         {
             get { return _debugDetails; }
             set
@@ -278,7 +278,7 @@ namespace TelemetryReplayer.ViewModels
 
         private void InitReplayFiles()
         {
-            var directoryInfo = new DirectoryInfo(@"data");
+            var directoryInfo = new DirectoryInfo(@"C:\Users\bkons\source\repos\F1TelemetryUi\F1TelemetryUi\bin\Debug\telemetry");
             ReplayFiles = new ObservableCollection<FileInfo>(directoryInfo.GetFiles("*.f1s"));
         }
 
@@ -290,7 +290,7 @@ namespace TelemetryReplayer.ViewModels
                 ReplayData = await LoadReplay((FileInfo)e.AddedItems[0]);
                 ReplayDataIndex = 0;
                 DebugData.Clear();
-                DebugDetails = string.Empty;
+                DebugDetails = null;
                 Status = Status.FileLoaded;
             }
         }
@@ -312,35 +312,35 @@ namespace TelemetryReplayer.ViewModels
             {
                 case PacketType.Motion:
                     PacketMotionData motionData = StructUtility.ConvertToPacket<PacketMotionData>(selectedDebugData.Data);
-                    DebugDetails = JsonConvert.SerializeObject(motionData, Formatting.Indented);
+                    DebugDetails = new ObjectViewModelHierarchy(motionData);
                     return;
                 case PacketType.Session:
                     PacketSessionData sessionData = StructUtility.ConvertToPacket<PacketSessionData>(selectedDebugData.Data);
-                    DebugDetails = JsonConvert.SerializeObject(sessionData, Formatting.Indented);
+                    DebugDetails = new ObjectViewModelHierarchy(sessionData);
                     return;
                 case PacketType.LapData:
                     PacketLapData lapData = StructUtility.ConvertToPacket<PacketLapData>(selectedDebugData.Data);
-                    DebugDetails = JsonConvert.SerializeObject(lapData, Formatting.Indented);
+                    DebugDetails = new ObjectViewModelHierarchy(lapData);
                     return;
                 case PacketType.Event:
                     EventPacket eventData = StructUtility.ConvertToPacket<EventPacket>(selectedDebugData.Data);
-                    DebugDetails = JsonConvert.SerializeObject(eventData, Formatting.Indented);
+                    DebugDetails = new ObjectViewModelHierarchy(eventData);
                     return;
                 case PacketType.Participants:
                     PacketParticipantsData participantsData = StructUtility.ConvertToPacket<PacketParticipantsData>(selectedDebugData.Data);
-                    DebugDetails = JsonConvert.SerializeObject(participantsData, Formatting.Indented);
+                    DebugDetails = new ObjectViewModelHierarchy(participantsData);
                     return;
                 case PacketType.CarSetups:
                     PacketCarSetupData carSetupsData = StructUtility.ConvertToPacket<PacketCarSetupData>(selectedDebugData.Data);
-                    DebugDetails = JsonConvert.SerializeObject(carSetupsData, Formatting.Indented);
+                    DebugDetails = new ObjectViewModelHierarchy(carSetupsData);
                     return;
                 case PacketType.CarTelemetry:
                     PacketCarTelemetryData carTelemetryData = StructUtility.ConvertToPacket<PacketCarTelemetryData>(selectedDebugData.Data);
-                    DebugDetails = JsonConvert.SerializeObject(carTelemetryData, Formatting.Indented);
+                    DebugDetails = new ObjectViewModelHierarchy(carTelemetryData);
                     return;
                 case PacketType.CarStatus:
                     PacketCarStatusData carStatusData = StructUtility.ConvertToPacket<PacketCarStatusData>(selectedDebugData.Data);
-                    DebugDetails = JsonConvert.SerializeObject(carStatusData, Formatting.Indented);
+                    DebugDetails = new ObjectViewModelHierarchy(carStatusData);
                     return;
             }
         }
@@ -351,7 +351,7 @@ namespace TelemetryReplayer.ViewModels
             {
                 var data = File.ReadAllBytes(file.FullName);
                 List<BinaryPacket> binaryPackets = LZ4MessagePackSerializer.Deserialize<List<BinaryPacket>>(data);
-                List<IGrouping<uint, BinaryPacket>> groups = binaryPackets.GroupBy(x => x.FrameIdentifier).ToList();
+                var groups = binaryPackets.GroupBy(x => x.FrameIdentifier).ToList();
                 return groups;
             });
         }

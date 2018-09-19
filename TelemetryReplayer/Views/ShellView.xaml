@@ -1,41 +1,52 @@
-﻿<controls:MetroWindow x:Class="TelemetryReplayer.Views.ShellView"
-        xmlns:controls="http://metro.mahapps.com/winfx/xaml/controls"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"        
-        xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
-        xmlns:cal="http://www.caliburnproject.org"
-                      xmlns:valueconverters="clr-namespace:TelemetryReplayer.ValueConverters"
-                      mc:Ignorable="d"
-        Title="ShellViewModel" Height="400" Width="800">
+﻿<controls:MetroWindow
+    x:Class="TelemetryReplayer.Views.ShellView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:cal="http://www.caliburnproject.org"
+    xmlns:controls="http://metro.mahapps.com/winfx/xaml/controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:valueconverters="clr-namespace:TelemetryReplayer.ValueConverters"
+    Title="Telemetry Replayer"
+    Width="800"
+    Height="400"
+    mc:Ignorable="d">
     <controls:MetroWindow.Resources>
-        <valueconverters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" TrueValue="Visible" FalseValue="Collapsed"/>
+        <valueconverters:BoolToVisibilityConverter
+            x:Key="BoolToVisibilityConverter"
+            FalseValue="Collapsed"
+            TrueValue="Visible" />
     </controls:MetroWindow.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="180"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="180" />
+            <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <Grid Grid.Column="0" Panel.ZIndex="9999" Grid.ColumnSpan="2" Background="#4CA8A8A8" Visibility="{Binding IsLoading, Converter={StaticResource ResourceKey=BoolToVisibilityConverter}}">
-            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+        <Grid
+            Grid.Column="0"
+            Grid.ColumnSpan="2"
+            Panel.ZIndex="9999"
+            Background="#4CA8A8A8"
+            Visibility="{Binding IsLoading, Converter={StaticResource ResourceKey=BoolToVisibilityConverter}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <controls:ProgressRing />
-                <Label Content="Loading" HorizontalAlignment="Center"/>
+                <Label HorizontalAlignment="Center" Content="Loading" />
             </StackPanel>
         </Grid>
 
         <Grid>
-            <ListBox Grid.Column="0" 
-                ItemsSource="{Binding ReplayFiles}" 
-                SelectedItem="{Binding SelectedReplay}" 
-                DisplayMemberPath="Name"  
+            <ListBox
+                Grid.Column="0"
+                cal:Message.Attach="[Event SelectionChanged] = [OnReplaySelectedAsync($source,$eventArgs)]"
+                DisplayMemberPath="Name"
+                ItemsSource="{Binding ReplayFiles}"
                 ScrollViewer.VerticalScrollBarVisibility="Visible"
-                cal:Message.Attach="[Event SelectionChanged] = [OnReplaySelectedAsync($source,$eventArgs)]">
-            </ListBox>
+                SelectedItem="{Binding SelectedReplay}" />
             <Grid Background="#4CA8A8A8" Visibility="{Binding IsPlaying, Converter={StaticResource ResourceKey=BoolToVisibilityConverter}}">
-                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <Label Content="Disabled when playing" HorizontalAlignment="Center"/>
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Label HorizontalAlignment="Center" Content="Disabled when playing" />
                 </StackPanel>
             </Grid>
         </Grid>
@@ -43,121 +54,190 @@
         <Grid Grid.Column="1">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="30"/>
-                    <RowDefinition Height="55"/>
-                    <RowDefinition Height="60"/>
-                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="30" />
+                    <RowDefinition Height="55" />
+                    <RowDefinition Height="60" />
+                    <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <Label HorizontalAlignment="Center" Grid.Row="0" Content="{Binding StatusText}"/>
+                <Label
+                    Grid.Row="0"
+                    HorizontalAlignment="Center"
+                    Content="{Binding StatusText}" />
 
-                <StackPanel Orientation="Vertical" Grid.Row="1">
-                    <Slider Margin="50, 10, 50, 0"  Minimum="0" 
-                        Maximum="{Binding ReplayData.Count}" 
-                        Value="{Binding ReplayDataIndex}"/>
-                    <Label HorizontalAlignment="Center" Content="{Binding PlayStatusText}"/>
+                <StackPanel Grid.Row="1" Orientation="Vertical">
+                    <Slider
+                        Margin="50,10,50,0"
+                        Maximum="{Binding ReplayData.Count}"
+                        Minimum="0"
+                        Value="{Binding ReplayDataIndex}" />
+                    <Label HorizontalAlignment="Center" Content="{Binding PlayStatusText}" />
                 </StackPanel>
 
-                <Grid Margin="50, 10, 50, 0" Grid.Row="2">
+                <Grid Grid.Row="2" Margin="50,10,50,0">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="60"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="60"/>
+                        <ColumnDefinition Width="60" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="60" />
                     </Grid.ColumnDefinitions>
-                    <Button Grid.Column="0" Name="Stop">
+                    <Button Name="Stop" Grid.Column="0">
                         <Grid>
-                            <Rectangle 
-                            Width="20"
-                            Height="20"
-                            Fill="{Binding Path=Foreground, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Button}}}">
+                            <Rectangle
+                                Width="20"
+                                Height="20"
+                                Fill="{Binding Path=Foreground, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Button}}}">
                                 <Rectangle.OpacityMask>
                                     <VisualBrush Stretch="Fill" Visual="{DynamicResource appbar_control_stop}" />
                                 </Rectangle.OpacityMask>
                             </Rectangle>
                         </Grid>
                     </Button>
-                    <Button Grid.Column="1" Name="TogglePlayAsync">
+                    <Button Name="TogglePlayAsync" Grid.Column="1">
                         <Grid>
-                            <Rectangle 
-                            Width="20"
-                            Height="20"
-                            Fill="{Binding Path=Foreground, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Button}}}">
+                            <Rectangle
+                                Width="20"
+                                Height="20"
+                                Fill="{Binding Path=Foreground, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Button}}}">
                                 <Rectangle.OpacityMask>
                                     <VisualBrush Stretch="Fill" Visual="{DynamicResource appbar_control_play}" />
                                 </Rectangle.OpacityMask>
                             </Rectangle>
-                            <Rectangle 
-                            Width="20" Visibility="{Binding IsPlaying, Converter={StaticResource ResourceKey=BoolToVisibilityConverter}}"
-                            Height="20"
-                            Fill="{Binding Path=Foreground, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Button}}}">
+                            <Rectangle
+                                Width="20"
+                                Height="20"
+                                Fill="{Binding Path=Foreground, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Button}}}"
+                                Visibility="{Binding IsPlaying, Converter={StaticResource ResourceKey=BoolToVisibilityConverter}}">
                                 <Rectangle.OpacityMask>
                                     <VisualBrush Stretch="Fill" Visual="{DynamicResource appbar_control_stop}" />
                                 </Rectangle.OpacityMask>
                             </Rectangle>
                         </Grid>
                     </Button>
-                    <Button Name="ToggleReplaySpeed" Padding="0" Grid.Column="2">
+                    <Button
+                        Name="ToggleReplaySpeed"
+                        Grid.Column="2"
+                        Padding="0">
                         <Grid>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
-                            <Rectangle Grid.Row="0" VerticalAlignment="Center"
-                            Width="18"
-                            Height="18"
-                            Fill="{Binding Path=Foreground, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Button}}}">
+                            <Rectangle
+                                Grid.Row="0"
+                                Width="18"
+                                Height="18"
+                                VerticalAlignment="Center"
+                                Fill="{Binding Path=Foreground, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Button}}}">
                                 <Rectangle.OpacityMask>
                                     <VisualBrush Stretch="Fill" Visual="{DynamicResource appbar_control_fastforward_variant}" />
                                 </Rectangle.OpacityMask>
                             </Rectangle>
-                            <Label 
-                                VerticalAlignment="Center" 
-                                Padding="0" 
-                                Grid.Row="1" 
-                                FontSize="15" 
-                                FontWeight="Bold"
-                                Content="{Binding ReplaySpeedText}"/>
+                            <Label
+                                Grid.Row="1"
+                                Padding="0"
+                                VerticalAlignment="Center"
+                                Content="{Binding ReplaySpeedText}"
+                                FontSize="15"
+                                FontWeight="Bold" />
                         </Grid>
                     </Button>
                 </Grid>
                 <Grid Grid.Row="3">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="30"/>
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="30" />
+                        <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="5"/>
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="5" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <CheckBox Margin="5" IsChecked="{Binding Debug}" Content="Debug"/>
-                    <ListView SelectedItem="{Binding SelectedDebugPacket}" 
-                            Grid.Column="0" 
-                            Grid.Row="1"
-                            Visibility="{Binding Debug, Converter={StaticResource ResourceKey=BoolToVisibilityConverter}}"
-                            ScrollViewer.VerticalScrollBarVisibility="Visible"
-                            cal:Message.Attach="[Event SelectionChanged] = [OnDebugDataSelected($source,$eventArgs)]"
-                        ItemsSource="{Binding DebugData}">
+                    <CheckBox
+                        Margin="5"
+                        Content="Debug"
+                        IsChecked="{Binding Debug}" />
+                    <ListView
+                        Grid.Row="1"
+                        Grid.Column="0"
+                        cal:Message.Attach="[Event SelectionChanged] = [OnDebugDataSelected($source,$eventArgs)]"
+                        ItemsSource="{Binding DebugData}"
+                        ScrollViewer.VerticalScrollBarVisibility="Visible"
+                        SelectedItem="{Binding SelectedDebugPacket}"
+                        Visibility="{Binding Debug, Converter={StaticResource ResourceKey=BoolToVisibilityConverter}}">
                         <ListView.View>
                             <GridView>
-                                <GridViewColumn Width="96" Header="Type" DisplayMemberBinding="{Binding PacketType}"/>
-                                <GridViewColumn Width="96" Header="Time" DisplayMemberBinding="{Binding SessionTime}"/>
-                                <GridViewColumn Width="96" Header="FrameId" DisplayMemberBinding="{Binding FrameIdentifier}"/>
+                                <GridViewColumn
+                                    Width="96"
+                                    DisplayMemberBinding="{Binding PacketType}"
+                                    Header="Type" />
+                                <GridViewColumn
+                                    Width="96"
+                                    DisplayMemberBinding="{Binding SessionTime}"
+                                    Header="Time" />
+                                <GridViewColumn
+                                    Width="96"
+                                    DisplayMemberBinding="{Binding FrameIdentifier}"
+                                    Header="FrameId" />
                             </GridView>
                         </ListView.View>
                     </ListView>
-                    <GridSplitter Visibility="{Binding Debug, Converter={StaticResource ResourceKey=BoolToVisibilityConverter}}"
-                                  Grid.Row="1" 
-                                  Grid.Column="1" 
-                                  Width="5" 
-                                  HorizontalAlignment="Stretch"/>
-                    <TextBox BorderThickness="0"
-                        cal:Message.Attach="[Event TextChanged] = [OnDebugDetailsTextChanged($source, $eventArgs)]"                        
-                        VerticalScrollBarVisibility="Visible" 
-                        Visibility="{Binding Debug, Converter={StaticResource ResourceKey=BoolToVisibilityConverter}}"
-                        Grid.Column="2" 
-                        Grid.Row="2" 
-                        IsReadOnly="True" 
-                        Text="{Binding DebugDetails}"/>
+                    <GridSplitter
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        Width="5"
+                        HorizontalAlignment="Stretch"
+                        Visibility="{Binding Debug, Converter={StaticResource ResourceKey=BoolToVisibilityConverter}}" />
+
+                    <TreeView
+                        Grid.Row="2"
+                        Grid.Column="2"
+                        FontFamily="Consolas"
+                        FontSize="13"
+                        ItemsSource="{Binding DebugDetails.FirstGeneration}"
+                        Visibility="{Binding Debug, Converter={StaticResource ResourceKey=BoolToVisibilityConverter}}">
+                        <TreeView.ItemContainerStyle>
+                            <Style TargetType="{x:Type TreeViewItem}">
+                                <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+                                <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+                                <Setter Property="FontWeight" Value="Normal" />
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="FontWeight" Value="Bold" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TreeView.ItemContainerStyle>
+                        <TreeView.ItemTemplate>
+                            <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition />
+                                        <ColumnDefinition />
+                                        <ColumnDefinition />
+                                        <ColumnDefinition />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock
+                                        Grid.Row="0"
+                                        Grid.Column="0"
+                                        Padding="2,0"
+                                        Text="{Binding Name}" />
+                                    <TextBlock
+                                        Grid.Row="0"
+                                        Grid.Column="1"
+                                        Padding="2,0"
+                                        Text="{Binding Type}" />
+                                    <TextBlock
+                                        Grid.Row="0"
+                                        Grid.Column="2"
+                                        Padding="2,0"
+                                        FontWeight="UltraBold"
+                                        Text="{Binding Value}" />
+                                </Grid>
+                            </HierarchicalDataTemplate>
+                        </TreeView.ItemTemplate>
+                    </TreeView>
                 </Grid>
             </Grid>
         </Grid>
